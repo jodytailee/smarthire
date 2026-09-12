@@ -49,7 +49,10 @@ on conflict (id) do nothing;
 
 -- Solo service_role puede leer/escribir — todo acceso desde el cliente pasa
 -- por rutas API que generan URLs firmadas de corta duración.
-create policy if not exists "postulaciones_service_role"
+-- Postgres no soporta "CREATE POLICY IF NOT EXISTS" — se dropea primero
+-- para que este script se pueda correr más de una vez sin error.
+drop policy if exists "postulaciones_service_role" on storage.objects;
+create policy "postulaciones_service_role"
   on storage.objects for all
   using (bucket_id = 'postulaciones' and auth.role() = 'service_role')
   with check (bucket_id = 'postulaciones' and auth.role() = 'service_role');
