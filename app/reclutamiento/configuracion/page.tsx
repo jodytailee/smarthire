@@ -38,13 +38,29 @@ export default function ConfiguracionEmpresaPage() {
 
   async function subirLogo(file: File | null) {
     if (!file) return;
-    setSubiendoLogo(true);
     setError(null);
+
+    const TIPOS_PERMITIDOS = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+    if (!TIPOS_PERMITIDOS.includes(file.type)) {
+      setError("Formato no permitido — usá PNG, JPG, WEBP o SVG.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("El logo no puede pesar más de 2 MB. Probá con una imagen más liviana.");
+      return;
+    }
+
+    setSubiendoLogo(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await apiFetch("/api/reclutamiento/empresa/logo", { method: "POST", body: fd });
-      const json = await res.json();
+      let json: any;
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error(`El servidor no respondió correctamente (código ${res.status}). Probá de nuevo en un momento.`);
+      }
       if (!res.ok) throw new Error(json.error ?? "No se pudo subir el logo.");
       setEmpresa((prev) => (prev ? { ...prev, logo_url: json.logo_url } : prev));
     } catch (e: any) { setError(e.message); } finally { setSubiendoLogo(false); }
