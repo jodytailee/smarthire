@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiJSON } from "@/lib/api-client";
+import { normalizeAccentColor } from "@/lib/colors";
 
 type Plantilla = {
   id: number;
@@ -53,7 +54,7 @@ export default function PlantillasPuestoPage() {
           {data.map((p) => (
             <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className={`h-2.5 w-2.5 rounded-full ${p.color === "slate" ? "bg-slate-500" : "bg-rose-500"}`} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: normalizeAccentColor(p.color) }} />
                 <span className="text-xs text-slate-400">{p.publicaciones_activas}/{p.publicaciones_total} publicaciones</span>
               </div>
               <h3 className="font-semibold text-slate-900">{p.nombre}</h3>

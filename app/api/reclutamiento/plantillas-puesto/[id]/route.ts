@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/db-admin";
 import { requireUsuario, esErrorResponse } from "@/lib/api-guard";
+import { normalizeAccentColor } from "@/lib/colors";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (preguntas !== undefined) patch.preguntas = Array.isArray(preguntas) ? preguntas : [];
   if (escenarios !== undefined) patch.escenarios = Array.isArray(escenarios) ? escenarios : [];
   if (tipos_documento !== undefined) patch.tipos_documento = Array.isArray(tipos_documento) ? tipos_documento : [];
-  if (color !== undefined) patch.color = color === "slate" ? "slate" : "rose";
+  if (color !== undefined) patch.color = normalizeAccentColor(color);
 
   const { error } = await db.from("plantilla_puesto").update(patch).eq("id", id).eq("fk_empresa", usuario.fkEmpresa);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

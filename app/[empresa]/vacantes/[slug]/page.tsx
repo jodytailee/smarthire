@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, use } from "react";
 import Link from "next/link";
 import { comprimirImagen } from "@/lib/comprimir-imagen";
+import { normalizeAccentColor, accentSoftBg } from "@/lib/colors";
 
 type Pregunta = { id: string; texto: string };
 type Escenario = { id: string; situacion: string; preguntas: Pregunta[] };
@@ -11,6 +12,7 @@ type TipoDoc = { id: string; label: string; obligatorio: boolean };
 type Vacante = {
   id: number;
   empresa: string;
+  empresaLogoUrl: string | null;
   titulo: string;
   slug: string;
   resumen: string | null;
@@ -18,7 +20,7 @@ type Vacante = {
   preguntas: Pregunta[];
   escenarios: Escenario[];
   tipos_documento: TipoDoc[];
-  color: "rose" | "slate";
+  color: string;
   localidades: string[];
 };
 
@@ -94,9 +96,8 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
       .finally(() => setCargando(false));
   }, [empresa, slug]);
 
-  const accent = vacante?.color === "slate"
-    ? { btn: "bg-slate-700 hover:bg-slate-800 active:bg-slate-900", ring: "focus:ring-slate-500", text: "text-slate-700", badge: "bg-slate-100 text-slate-600", pill: "bg-slate-50 border-slate-400 text-slate-700" }
-    : { btn: "bg-rose-600 hover:bg-rose-700 active:bg-rose-800", ring: "focus:ring-rose-500", text: "text-rose-600", badge: "bg-rose-100 text-rose-600", pill: "bg-rose-50 border-rose-400 text-rose-700" };
+  const color = normalizeAccentColor(vacante?.color);
+  const ringClass = "focus:ring-slate-400"; // el foco del input queda neutro; el color de marca se ve en botones/badges
 
   function handleRegistroChange(field: keyof RegistroData, value: string) {
     setRegistro((prev) => ({ ...prev, [field]: value }));
@@ -233,7 +234,13 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-rose-50 to-slate-100">
       <header className="bg-slate-900 px-6 py-3.5">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <Link href={`/${empresa}/vacantes`} className="text-sm font-bold text-white">{vacante.empresa}</Link>
+          <Link href={`/${empresa}/vacantes`} className="flex items-center gap-2 text-sm font-bold text-white">
+            {vacante.empresaLogoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={vacante.empresaLogoUrl} alt="" className="h-6 w-6 rounded object-contain" />
+            )}
+            {vacante.empresa}
+          </Link>
           <span className="text-xs text-slate-500">Aplicación — {vacante.titulo}</span>
         </div>
       </header>
@@ -241,11 +248,11 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         {step !== "confirmacion" && (
           <div className="mb-8 flex items-center gap-2">
-            <StepBadge num={1} active={step === "registro"} done={step !== "registro"} label="Datos" accent={accent} />
-            <div className={`h-0.5 flex-1 rounded ${step !== "registro" ? (vacante.color === "slate" ? "bg-slate-500" : "bg-rose-400") : "bg-slate-200"}`} />
-            <StepBadge num={2} active={step === "documentos"} done={step === "prueba"} label="Documentos" accent={accent} />
-            <div className={`h-0.5 flex-1 rounded ${step === "prueba" ? (vacante.color === "slate" ? "bg-slate-500" : "bg-rose-400") : "bg-slate-200"}`} />
-            <StepBadge num={3} active={step === "prueba"} done={false} label="Prueba" accent={accent} />
+            <StepBadge num={1} active={step === "registro"} done={step !== "registro"} label="Datos" color={color} />
+            <div className="h-0.5 flex-1 rounded bg-slate-200" style={step !== "registro" ? { backgroundColor: color } : undefined} />
+            <StepBadge num={2} active={step === "documentos"} done={step === "prueba"} label="Documentos" color={color} />
+            <div className="h-0.5 flex-1 rounded bg-slate-200" style={step === "prueba" ? { backgroundColor: color } : undefined} />
+            <StepBadge num={3} active={step === "prueba"} done={false} label="Prueba" color={color} />
           </div>
         )}
 
@@ -254,7 +261,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
             <div>
               <h2 className="text-xl font-bold text-slate-800">Datos personales</h2>
               <p className="mt-1 text-sm text-slate-500">Tu información de contacto para hacerte llegar nuestra respuesta.</p>
-              <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${accent.badge}`}>
+              <span className="mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: accentSoftBg(color), color }}>
                 {JORNADA_LABEL[vacante.tipo_jornada]}
               </span>
             </div>
@@ -263,7 +270,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de identificación</label>
                 <select value={registro.tipo_identificacion} onChange={(e) => handleRegistroChange("tipo_identificacion", e.target.value)}
-                  className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`}>
+                  className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`}>
                   <option value="cedula">Cédula de identidad</option>
                   <option value="dimex">DIMEX</option>
                   <option value="pasaporte">Pasaporte</option>
@@ -272,27 +279,27 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-slate-700">Número de identificación</label>
                 <input type="text" value={registro.numero_identificacion} onChange={(e) => handleRegistroChange("numero_identificacion", e.target.value)}
-                  placeholder="Ej: 1-1234-5678" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="Ej: 1-1234-5678" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Nombre</label>
                 <input type="text" value={registro.primer_nombre} onChange={(e) => handleRegistroChange("primer_nombre", e.target.value)}
-                  placeholder="Tu nombre" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="Tu nombre" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Apellido</label>
                 <input type="text" value={registro.primer_apellido} onChange={(e) => handleRegistroChange("primer_apellido", e.target.value)}
-                  placeholder="Tu apellido" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="Tu apellido" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-slate-700">Correo electrónico</label>
                 <input type="email" value={registro.correo_electronico} onChange={(e) => handleRegistroChange("correo_electronico", e.target.value)}
-                  placeholder="tucorreo@ejemplo.com" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="tucorreo@ejemplo.com" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-slate-700">Teléfono</label>
                 <input type="tel" value={registro.telefono} onChange={(e) => handleRegistroChange("telefono", e.target.value)}
-                  placeholder="8888-8888" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="8888-8888" className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
 
               <div className="sm:col-span-2">
@@ -307,8 +314,10 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
                       const sel = lugares.includes(lugar);
                       return (
                         <button key={lugar} type="button" onClick={() => toggleLugar(lugar)}
-                          className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${sel ? `${accent.pill} font-medium` : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
-                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${sel ? (vacante.color === "slate" ? "border-slate-700 bg-slate-700" : "border-rose-600 bg-rose-600") : "border-slate-300"}`}>
+                          className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${sel ? "font-medium" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                          style={sel ? { backgroundColor: accentSoftBg(color), borderColor: color, color } : undefined}>
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 border-slate-300 transition-colors"
+                            style={sel ? { backgroundColor: color, borderColor: color } : undefined}>
                             {sel && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                           </span>
                           {lugar}
@@ -326,7 +335,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
 
             {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
 
-            <button onClick={irADocumentos} className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-colors ${accent.btn}`}>
+            <button onClick={irADocumentos} className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: color }}>
               Continuar →
             </button>
           </div>
@@ -375,7 +384,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
                 ← Volver
               </button>
               <button onClick={() => { if (haySubiendoArchivos()) { setError("Esperá a que terminen de subir los archivos."); return; } const err = validarDocumentos(); if (err) { setError(err); return; } setError(""); setStep("prueba"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-colors ${accent.btn}`}>
+                className="flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: color }}>
                 Continuar a la prueba →
               </button>
             </div>
@@ -395,11 +404,11 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
             {vacante.preguntas.map((p, i) => (
               <div key={p.id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <label className="block text-sm font-semibold text-slate-800">
-                  <span className={`mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full ${accent.badge} text-xs font-bold`}>{i + 1}</span>
+                  <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: accentSoftBg(color), color }}>{i + 1}</span>
                   {p.texto}
                 </label>
                 <textarea rows={4} value={respuestas[p.id] ?? ""} onChange={(e) => handleRespuesta(p.id, e.target.value)}
-                  placeholder="Escribí tu respuesta aquí…" className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                  placeholder="Escribí tu respuesta aquí…" className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
               </div>
             ))}
 
@@ -423,7 +432,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
                         <span className="mr-1 font-normal text-slate-400">{ei + 1}.{pi + 1}</span> {p.texto}
                       </label>
                       <textarea rows={3} value={respuestas[p.id] ?? ""} onChange={(e) => handleRespuesta(p.id, e.target.value)}
-                        placeholder="Escribí tu respuesta…" className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring}`} />
+                        placeholder="Escribí tu respuesta…" className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ringClass}`} />
                     </div>
                   ))}
                 </div>
@@ -438,7 +447,8 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
                 ← Volver
               </button>
               <button onClick={handleEnviar} disabled={enviando}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${accent.btn}`}>
+                className="flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: color }}>
                 {enviando ? "Enviando…" : "Enviar postulación ✓"}
               </button>
             </div>
@@ -461,7 +471,7 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
               </p>
             )}
             <div className="pt-4">
-              <Link href={`/${empresa}/vacantes`} className={`text-sm font-medium underline ${accent.text} hover:underline`}>Ver otras vacantes</Link>
+              <Link href={`/${empresa}/vacantes`} className="text-sm font-medium underline hover:underline" style={{ color }}>Ver otras vacantes</Link>
             </div>
           </div>
         )}
@@ -470,13 +480,14 @@ export default function PostularVacantePage({ params }: { params: Promise<{ empr
   );
 }
 
-function StepBadge({ num, active, done, label, accent }: { num: number; active: boolean; done: boolean; label: string; accent: { badge: string; text: string } }) {
+function StepBadge({ num, active, done, label, color }: { num: number; active: boolean; done: boolean; label: string; color: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done ? "bg-green-500 text-white" : active ? "bg-slate-700 text-white" : "bg-slate-200 text-slate-500"}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${done ? "bg-green-500" : !active ? "bg-slate-200 !text-slate-500" : ""}`}
+        style={active ? { backgroundColor: color } : undefined}>
         {done ? "✓" : num}
       </div>
-      <span className={`hidden text-xs font-medium sm:block ${active ? accent.text : done ? "text-green-600" : "text-slate-400"}`}>{label}</span>
+      <span className={`hidden text-xs font-medium sm:block ${done ? "text-green-600" : !active ? "text-slate-400" : ""}`} style={active ? { color } : undefined}>{label}</span>
     </div>
   );
 }

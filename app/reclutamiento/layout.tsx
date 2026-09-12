@@ -10,6 +10,7 @@ const NAV = [
   { href: "/reclutamiento/vacantes", label: "Vacantes" },
   { href: "/reclutamiento/plantillas-puesto", label: "Plantillas de puesto" },
   { href: "/reclutamiento/entrevistas/disponibilidad", label: "Disponibilidad" },
+  { href: "/reclutamiento/configuracion", label: "Configuración" },
 ];
 
 export default function ReclutamientoLayout({ children }: { children: React.ReactNode }) {

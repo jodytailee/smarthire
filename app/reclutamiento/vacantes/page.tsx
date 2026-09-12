@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiJSON } from "@/lib/api-client";
+import { normalizeAccentColor } from "@/lib/colors";
 
 type Vacante = {
   id: number;
@@ -70,7 +71,7 @@ export default function VacantesPage() {
               {data.map((v) => (
                 <tr key={v.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-3">
-                    <span className={`mr-2 inline-block h-2 w-2 rounded-full ${v.color === "slate" ? "bg-slate-500" : "bg-rose-500"}`} />
+                    <span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: normalizeAccentColor(v.color) }} />
                     <span className="font-semibold text-slate-900">{v.titulo}</span>
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">{v.tipo_jornada}</td>

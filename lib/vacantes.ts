@@ -42,8 +42,31 @@ async function llamarClaudeJSON(prompt: string, maxTokens: number, timeoutMs: nu
 export async function generarDescripcionPuestoConIA(args: {
   empresa: EmpresaContexto;
   nombrePuesto: string;
+  resumenExistente?: string;
 }): Promise<{ resumen: string; responsabilidades: string[]; requisitos: string[] }> {
-  const prompt = `Sos un experto en reclutamiento de personal para ${contextoEmpresa(args.empresa)}, en Costa Rica.
+  // Si ya hay un resumen escrito a mano, no lo pisamos: le pedimos a la IA
+  // que solo complete responsabilidades y requisitos coherentes con ese
+  // resumen. Si no hay resumen, genera los tres campos desde cero.
+  const resumenExistente = args.resumenExistente?.trim();
+
+  const prompt = resumenExistente
+    ? `Sos un experto en reclutamiento de personal para ${contextoEmpresa(args.empresa)}, en Costa Rica.
+
+Tengo un puesto de trabajo llamado "${args.nombrePuesto}" con este resumen ya escrito:
+"${resumenExistente}"
+
+A partir de ese nombre y resumen (no los cambies), generá:
+1. Entre 4 y 6 responsabilidades concretas del día a día en el puesto, coherentes con el resumen.
+2. Entre 3 y 5 requisitos que debería cumplir el candidato (experiencia, actitud, disponibilidad, condiciones físicas si aplica, etc), coherentes con el resumen.
+
+Este puesto se reutilizará en varias rondas de reclutamiento (a veces tiempo completo, a veces medio tiempo o temporada), así que no menciones un tipo de jornada específico ni una localidad.
+
+Respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backticks, sin texto adicional) con esta forma exacta:
+{
+  "responsabilidades": [ "string" ],
+  "requisitos": [ "string" ]
+}`
+    : `Sos un experto en reclutamiento de personal para ${contextoEmpresa(args.empresa)}, en Costa Rica.
 
 Necesito la descripción de un puesto de trabajo llamado "${args.nombrePuesto}", para publicarlo en una convocatoria de empleo. Este puesto se reutilizará en varias rondas de reclutamiento (a veces tiempo completo, a veces medio tiempo o temporada), así que la descripción debe ser genérica respecto al tipo de jornada y no mencionar una localidad específica.
 
@@ -60,6 +83,17 @@ Respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backticks, sin text
 }`;
 
   const parsed = await llamarClaudeJSON(prompt, 1536, 30000);
+
+  if (resumenExistente) {
+    if (!Array.isArray(parsed.responsabilidades) || !Array.isArray(parsed.requisitos)) {
+      throw new Error("Respuesta de IA inválida.");
+    }
+    return {
+      resumen: resumenExistente,
+      responsabilidades: parsed.responsabilidades.map((r: string) => String(r ?? "").trim()).filter(Boolean),
+      requisitos: parsed.requisitos.map((r: string) => String(r ?? "").trim()).filter(Boolean),
+    };
+  }
 
   if (typeof parsed.resumen !== "string" || !Array.isArray(parsed.responsabilidades) || !Array.isArray(parsed.requisitos)) {
     throw new Error("Respuesta de IA inválida.");

@@ -6,7 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ emp
   const { empresa: empresaSlug } = await params;
   const db = adminClient();
 
-  const { data: empresa } = await db.from("empresa").select("id, nombre, color").eq("slug", empresaSlug).maybeSingle();
+  const { data: empresa } = await db.from("empresa").select("id, nombre, color, logo_url").eq("slug", empresaSlug).maybeSingle();
   if (!empresa) return NextResponse.json({ error: "Empresa no encontrada." }, { status: 404 });
 
   const { data, error } = await db
@@ -45,5 +45,5 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ emp
     })
     .filter(Boolean);
 
-  return NextResponse.json({ empresa: { nombre: empresa.nombre, color: empresa.color }, data: resultado });
+  return NextResponse.json({ empresa: { nombre: empresa.nombre, color: empresa.color, logo_url: empresa.logo_url }, data: resultado });
 }

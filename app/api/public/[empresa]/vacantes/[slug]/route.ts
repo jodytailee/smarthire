@@ -6,7 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ emp
   const { empresa: empresaSlug, slug } = await params;
   const db = adminClient();
 
-  const { data: empresa } = await db.from("empresa").select("id, nombre").eq("slug", empresaSlug).maybeSingle();
+  const { data: empresa } = await db.from("empresa").select("id, nombre, logo_url").eq("slug", empresaSlug).maybeSingle();
   if (!empresa) return NextResponse.json({ error: "Vacante no encontrada." }, { status: 404 });
 
   const { data, error } = await db
@@ -36,6 +36,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ emp
   return NextResponse.json({
     id: v.id,
     empresa: empresa.nombre,
+    empresaLogoUrl: empresa.logo_url ?? null,
     titulo: puesto.nombre,
     slug: v.slug,
     resumen: puesto.resumen,

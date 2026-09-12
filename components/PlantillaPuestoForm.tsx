@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiJSON } from "@/lib/api-client";
+import { normalizeAccentColor, ACCENT_PRESETS } from "@/lib/colors";
 
 type Pregunta = { id: string; texto: string };
 type Escenario = { id: string; situacion: string; preguntas: Pregunta[] };
@@ -48,18 +49,21 @@ export default function PlantillaPuestoForm({ inicial }: { inicial?: PlantillaPu
   const [requisitos, setRequisitos] = useState<string[]>(inicial?.requisitos ?? []);
   const [preguntas, setPreguntas] = useState<Pregunta[]>(inicial?.preguntas ?? []);
   const [escenarios, setEscenarios] = useState<Escenario[]>(inicial?.escenarios ?? []);
-  const [color, setColor] = useState(inicial?.color ?? "rose");
+  const [color, setColor] = useState(normalizeAccentColor(inicial?.color));
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Si ya hay un resumen escrito, lo mandamos a la IA para que solo
+  // complete responsabilidades/requisitos coherentes con él (no lo pisa).
+  // Si no hay resumen, genera los tres campos desde cero.
   async function prepopularConIA() {
     if (!nombre.trim()) { setError("Escribí el nombre del puesto primero."); return; }
     setGenerando("descripcion");
     setError(null);
     try {
       const r = await apiJSON("/api/reclutamiento/plantillas-puesto/generar-descripcion", {
-        method: "POST", body: JSON.stringify({ nombre }),
+        method: "POST", body: JSON.stringify({ nombre, resumen: resumen.trim() || undefined }),
       });
       setResumen(r.resumen);
       setResponsabilidades(r.responsabilidades);
@@ -114,7 +118,7 @@ export default function PlantillaPuestoForm({ inicial }: { inicial?: PlantillaPu
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none" />
           <button type="button" onClick={prepopularConIA} disabled={!!generando}
             className="whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50">
-            {generando === "descripcion" ? "Generando…" : "✨ Prepopular con IA"}
+            {generando === "descripcion" ? "Generando…" : resumen.trim() ? "✨ Sugerir responsabilidades y requisitos" : "✨ Prepopular con IA"}
           </button>
         </div>
       </div>
@@ -123,6 +127,9 @@ export default function PlantillaPuestoForm({ inicial }: { inicial?: PlantillaPu
         <label className="block text-xs font-semibold text-slate-600">Resumen</label>
         <textarea value={resumen} onChange={(e) => setResumen(e.target.value)} rows={2}
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none" />
+        <p className="mt-1 text-xs text-slate-400">
+          Escribí el nombre y (opcional) el resumen, después usá el botón de arriba — si ya hay resumen, la IA solo completa responsabilidades y requisitos coherentes con él.
+        </p>
       </div>
 
       <div>
@@ -160,13 +167,17 @@ export default function PlantillaPuestoForm({ inicial }: { inicial?: PlantillaPu
 
       <div>
         <label className="block text-xs font-semibold text-slate-600">Color de acento</label>
-        <div className="mt-1 flex gap-2">
-          {["rose", "slate"].map((c) => (
-            <button key={c} type="button" onClick={() => setColor(c)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${color === c ? "bg-slate-900 text-white" : "border border-slate-300 text-slate-600"}`}>
-              {c}
-            </button>
+        <p className="mt-1 text-xs text-slate-400">Se usa en los botones y badges de la página pública de esta vacante.</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {ACCENT_PRESETS.map((c) => (
+            <button key={c} type="button" onClick={() => setColor(c)} title={c}
+              className={`h-7 w-7 rounded-full border-2 transition-transform ${color === c ? "scale-110 border-slate-900" : "border-transparent"}`}
+              style={{ backgroundColor: c }} />
           ))}
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
+            className="h-7 w-7 cursor-pointer rounded-full border border-slate-300 p-0" title="Elegir otro color" />
+          <input type="text" value={color} onChange={(e) => setColor(e.target.value)}
+            className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-xs font-mono focus:border-rose-500 focus:outline-none" />
         </div>
       </div>
 

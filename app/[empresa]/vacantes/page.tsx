@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { normalizeAccentColor, accentSoftBg } from "@/lib/colors";
 
 type Vacante = {
   id: number;
@@ -11,7 +12,7 @@ type Vacante = {
   responsabilidades: string[];
   requisitos: string[];
   tipo_jornada: string;
-  color: "rose" | "slate";
+  color: string;
   localidades: string[];
 };
 
@@ -24,6 +25,7 @@ const JORNADA_LABEL: Record<string, string> = {
 export default function VacantesPublicasPage({ params }: { params: Promise<{ empresa: string }> }) {
   const { empresa } = use(params);
   const [nombreEmpresa, setNombreEmpresa] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [vacantes, setVacantes] = useState<Vacante[]>([]);
   const [cargando, setCargando] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -34,6 +36,7 @@ export default function VacantesPublicasPage({ params }: { params: Promise<{ emp
       .then((d) => {
         if (d.error) { setNotFound(true); return; }
         setNombreEmpresa(d.empresa?.nombre ?? "");
+        setLogoUrl(d.empresa?.logo_url ?? null);
         setVacantes(d.data ?? []);
       })
       .catch(() => setNotFound(true))
@@ -46,9 +49,13 @@ export default function VacantesPublicasPage({ params }: { params: Promise<{ emp
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 to-slate-100">
       <header className="bg-slate-900 px-6 py-4">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto flex max-w-3xl items-center gap-2.5">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="h-7 w-7 rounded object-contain" />
+          )}
           <span className="text-sm font-bold tracking-tight text-white">{nombreEmpresa}</span>
-          <span className="ml-2 text-xs text-slate-400">· vía SmartHire</span>
+          <span className="text-xs text-slate-400">· vía SmartHire</span>
         </div>
       </header>
 
@@ -59,26 +66,31 @@ export default function VacantesPublicasPage({ params }: { params: Promise<{ emp
           <p className="text-sm text-slate-500">No hay vacantes publicadas en este momento.</p>
         ) : (
           <div className="space-y-4">
-            {vacantes.map((v) => (
-              <div key={v.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${v.color === "slate" ? "bg-slate-100 text-slate-600" : "bg-rose-100 text-rose-600"}`}>
-                      {JORNADA_LABEL[v.tipo_jornada] ?? v.tipo_jornada}
-                    </span>
-                    <h2 className="mt-2 text-lg font-bold text-slate-900">{v.titulo}</h2>
-                    {v.resumen && <p className="mt-1 text-sm text-slate-600">{v.resumen}</p>}
-                    {v.localidades.length > 0 && (
-                      <p className="mt-2 text-xs text-slate-400">📍 {v.localidades.join(", ")}</p>
-                    )}
+            {vacantes.map((v) => {
+              const color = normalizeAccentColor(v.color);
+              return (
+                <div key={v.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="inline-block rounded-full px-2.5 py-1 text-xs font-semibold"
+                        style={{ backgroundColor: accentSoftBg(color), color }}>
+                        {JORNADA_LABEL[v.tipo_jornada] ?? v.tipo_jornada}
+                      </span>
+                      <h2 className="mt-2 text-lg font-bold text-slate-900">{v.titulo}</h2>
+                      {v.resumen && <p className="mt-1 text-sm text-slate-600">{v.resumen}</p>}
+                      {v.localidades.length > 0 && (
+                        <p className="mt-2 text-xs text-slate-400">📍 {v.localidades.join(", ")}</p>
+                      )}
+                    </div>
+                    <Link href={`/${empresa}/vacantes/${v.slug}`}
+                      className="whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: color }}>
+                      Aplicar ahora →
+                    </Link>
                   </div>
-                  <Link href={`/${empresa}/vacantes/${v.slug}`}
-                    className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold text-white ${v.color === "slate" ? "bg-slate-700 hover:bg-slate-800" : "bg-rose-600 hover:bg-rose-700"}`}>
-                    Aplicar ahora →
-                  </Link>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

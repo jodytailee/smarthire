@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/db-admin";
 import { requireUsuario, esErrorResponse } from "@/lib/api-guard";
+import { normalizeAccentColor } from "@/lib/colors";
 
 export async function GET(req: NextRequest) {
   const db = adminClient();
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       preguntas: Array.isArray(preguntas) ? preguntas : [],
       escenarios: Array.isArray(escenarios) ? escenarios : [],
       tipos_documento: Array.isArray(tipos_documento) ? tipos_documento : [],
-      color: color === "slate" ? "slate" : "rose",
+      color: normalizeAccentColor(color),
       creado_por: usuario.id,
     })
     .select("id")
