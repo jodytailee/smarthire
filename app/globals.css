@@ -12,12 +12,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* SmartHire está diseñado solo en modo claro (fondos blancos/slate, texto
+   oscuro) — sin este override, los <input>/<textarea> sin color de texto
+   explícito heredaban un --foreground casi blanco en modo oscuro del
+   sistema, quedando invisibles sobre su fondo blanco. */
 
 body {
   background: var(--background);
